@@ -2,25 +2,25 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f4f6f5">
-  <meta name="description" content="Bremen Budget: finanze personali, private e disponibili offline.">
+  <meta name="description" content="Budgeting: finanze personali, private e disponibili offline.">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Bremen Budget">
+  <meta name="apple-mobile-web-app-title" content="Budgeting">
   <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   <link rel="icon" href="./icons/icon-192.png">
   <link rel="stylesheet" href="./style.css">
-  <title>Bremen Budget</title>
+  <title>Budgeting</title>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Vai al contenuto</a>
   <div id="app" class="app-shell" aria-busy="true">
     <header class="topbar">
-      <div class="brand" aria-label="Bremen Budget">
+      <div class="brand" aria-label="Budgeting">
         <span class="brand-mark" aria-hidden="true">B</span>
-        <div><strong>Bremen Budget</strong><small>Il tuo spazio finanziario</small></div>
+        <div><strong>Budgeting</strong><small>Il tuo spazio finanziario</small></div>
       </div>
       <div class="topbar-actions">
         <button id="privacy-indicator" class="privacy-pill" type="button" data-nav="settings" aria-label="Apri le impostazioni privacy"><span aria-hidden="true">●</span> Solo sul dispositivo</button>
@@ -202,7 +202,7 @@
             <button id="delete-all-data" class="danger-button" type="button">Cancella tutto</button>
           </article>
         </div>
-        <footer class="app-footer"><p>Bremen Budget <span id="app-version">v1.0.0</span> · Nessun tracking, nessun account.</p></footer>
+        <footer class="app-footer"><p>Budgeting <span id="app-version">v1.1.0</span> · Nessun tracking, nessun account.</p></footer>
       </section>
     </main>
 
@@ -212,7 +212,7 @@
       <button class="nav-item" type="button" data-nav="transactions"><span aria-hidden="true">⇅</span><span>Movimenti</span></button>
       <button class="nav-item" type="button" data-nav="budget"><span aria-hidden="true">◔</span><span>Budget</span></button>
       <button class="nav-item" type="button" data-nav="networth"><span aria-hidden="true">⌁</span><span>Patrimonio</span></button>
-      <button class="nav-item" type="button" data-nav="settings"><span aria-hidden="true">⚙</span><span>Impostazioni</span></button>
+      <button class="nav-item" type="button" data-nav="settings"><span class="settings-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h4m4 0h8M4 17h10m4 0h2"/><circle cx="10" cy="7" r="2"/><circle cx="16" cy="17" r="2"/></svg></span><span>Impostazioni</span></button>
     </nav>
   </div>
 
@@ -310,14 +310,14 @@
   <div id="onboarding-modal" class="modal" hidden>
     <div class="modal-backdrop"></div>
     <section class="modal-panel onboarding" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
-      <div class="onboarding-mark" aria-hidden="true">B</div><p class="eyebrow">Benvenuto</p><h2 id="onboarding-title">Le tue finanze, senza rumore.</h2><p>Bremen Budget salva tutto sul tuo dispositivo. Puoi partire da zero oppure esplorare l’app con cinque movimenti dimostrativi.</p>
+      <div class="onboarding-mark" aria-hidden="true">B</div><p class="eyebrow">Benvenuto</p><h2 id="onboarding-title">Le tue finanze, senza rumore.</h2><p>Budgeting salva tutto sul tuo dispositivo. Puoi partire da zero oppure esplorare l’app con cinque movimenti dimostrativi.</p>
       <div class="onboarding-features"><span>✓ Offline</span><span>✓ Nessun account</span><span>✓ Backup portabile</span></div>
       <div class="modal-actions stacked-mobile"><button id="start-empty" class="secondary-button" type="button">Inizia senza dati</button><button id="start-demo" class="primary-button" type="button">Prova con dati demo</button></div>
     </section>
   </div>
 
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <noscript><div class="noscript">Bremen Budget richiede JavaScript per funzionare.</div></noscript>
+  <noscript><div class="noscript">Budgeting richiede JavaScript per funzionare.</div></noscript>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-# Bremen Budget
+# Budgeting
 
-Bremen Budget è una Progressive Web App per la gestione personale di entrate, spese, investimenti, trasferimenti, budget e patrimonio. È progettata mobile-first per un periodo di internship, non richiede account o backend e conserva i dati esclusivamente nel browser tramite IndexedDB.
+Budgeting è una Progressive Web App per la gestione personale di entrate, spese, investimenti, trasferimenti, budget e patrimonio. È progettata mobile-first, non richiede account o backend e conserva i dati esclusivamente nel browser tramite IndexedDB.
 
 ## Funzionalità
 
@@ -113,4 +113,4 @@ Conservare i backup in un luogo sicuro. L’app non può recuperarli da un serve
 
 ## Privacy
 
-Bremen Budget non include dipendenze esterne, analytics, font remoti o chiamate API. La cache del service worker contiene soltanto i file statici dell’app; i dati finanziari restano in IndexedDB e non vengono inseriti nella cache HTTP.
+Budgeting non include dipendenze esterne, analytics, font remoti o chiamate API. La cache del service worker contiene soltanto i file statici dell’app; i dati finanziari restano in IndexedDB e non vengono inseriti nella cache HTTP.

@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "Bremen Budget",
-  "short_name": "Bremen",
+  "name": "Budgeting",
+  "short_name": "Budgeting",
   "description": "Gestione finanziaria personale, privata e disponibile offline.",
   "lang": "it-IT",
   "dir": "ltr",

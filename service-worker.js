@@ -1,4 +1,4 @@
-const CACHE_VERSION = "bremen-budget-v1.0.0";
+const CACHE_VERSION = "budgeting-v1.1.0";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -27,7 +27,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("bremen-budget-") && key !== CACHE_VERSION).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => (key.startsWith("bremen-budget-") || key.startsWith("budgeting-")) && key !== CACHE_VERSION).map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
