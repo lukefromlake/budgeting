@@ -20,7 +20,7 @@ export const TYPE_META = {
 };
 
 export const DEFAULT_CATEGORIES = [
-  ...["Stipendio internship", "Werkstudent", "Rimborso", "Regalo", "Vendita", "Interesse", "Dividendo", "Altro"].map((name, index) => ({
+  ...["Stipendio", "Lavoro occasionale", "Rimborso", "Regalo", "Vendita", "Interesse", "Dividendo", "Altro"].map((name, index) => ({
     id: `income-${index + 1}`, name, type: "income", icon: ["💼", "🧑‍💻", "↩", "🎁", "🏷", "％", "◫", "＋"][index], color: "#228b65", isDefault: true,
   })),
   ...["Affitto", "Supermercato", "Ristoranti e bar", "Trasporti", "Viaggi", "Casa", "Utenze", "Abbonamenti", "Salute", "Sport", "Tecnologia", "Abbigliamento", "Divertimento", "Università", "Regali", "Varie"].map((name, index) => ({
@@ -28,9 +28,6 @@ export const DEFAULT_CATEGORIES = [
   })),
   ...["ETF", "Azioni", "Obbligazioni", "Conto deposito", "Crypto", "Fondo pensione", "Altro"].map((name, index) => ({
     id: `investment-${index + 1}`, name, type: "investment", icon: ["▥", "⌁", "▰", "▣", "◇", "◈", "＋"][index], color: "#6c63c7", isDefault: true,
-  })),
-  ...["Deposito casa", "Deposito badge DLR", "Trasloco", "Acquisti appartamento", "Viaggio Italia-Germania", "Documenti", "Assicurazione", "Altro internship"].map((name, index) => ({
-    id: `internship-${index + 1}`, name, type: "expense", icon: ["⌂", "▣", "⇥", "🛋", "✈", "▤", "▧", "•••"][index], color: "#bc7b36", group: "Internship", isDefault: true,
   })),
   { id: "transfer-1", name: "Trasferimento tra conti", type: "transfer", icon: "⇄", color: "#68707c", isDefault: true },
 ];
@@ -65,7 +62,7 @@ export function demoData() {
   const base = { account: "conto-italiano", paymentMethod: "Bonifico", recurring: false, notes: "Dati dimostrativi", createdAt, updatedAt: createdAt, isDemo: true };
   const id = () => crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   return [
-    { ...base, id: id(), date: day(1), type: "income", amount: 99200, category: "income-1", description: "Stipendio internship" },
+    { ...base, id: id(), date: day(1), type: "income", amount: 99200, category: "income-1", description: "Stipendio" },
     { ...base, id: id(), date: day(2), type: "expense", amount: 43782, category: "expense-1", description: "Affitto", recurring: true },
     { ...base, id: id(), date: day(6), type: "expense", amount: 4250, category: "expense-2", description: "Spesa settimanale", paymentMethod: "Carta" },
     { ...base, id: id(), date: day(8), type: "expense", amount: 5800, category: "expense-4", description: "Deutschlandticket", recurring: true },

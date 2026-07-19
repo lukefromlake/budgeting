@@ -3,7 +3,7 @@ import { csvCell, downloadBlob } from "./utils.js";
 
 export function buildBackup(data) {
   return {
-    app: "Bremen Budget",
+    app: "Budgeting",
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     transactions: data.transactions,
@@ -18,12 +18,12 @@ export function buildBackup(data) {
 
 export function exportJSON(data) {
   const date = new Date().toISOString().slice(0, 10);
-  downloadBlob(JSON.stringify(buildBackup(data), null, 2), `bremen-budget-backup-${date}.json`, "application/json;charset=utf-8");
+  downloadBlob(JSON.stringify(buildBackup(data), null, 2), `budgeting-backup-${date}.json`, "application/json;charset=utf-8");
 }
 
 export function validateBackup(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Il backup non sembra compatibile.");
-  if (value.app !== "Bremen Budget" || value.schemaVersion !== SCHEMA_VERSION) throw new Error("Versione del backup non supportata.");
+  if (!["Budgeting", "Bremen Budget"].includes(value.app) || value.schemaVersion !== SCHEMA_VERSION) throw new Error("Versione del backup non supportata.");
   const requiredArrays = ["transactions", "budgets", "categories", "accounts", "netWorthSnapshots", "recurringTransactions"];
   if (requiredArrays.some((key) => !Array.isArray(value[key])) || typeof value.settings !== "object") throw new Error("Il backup è incompleto o danneggiato.");
   const validTransaction = value.transactions.every((row) => row && typeof row.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(row.date) && ["income", "expense", "investment", "transfer"].includes(row.type) && Number.isInteger(row.amount) && row.amount > 0);
@@ -67,5 +67,5 @@ export function exportTransactionsCSV(transactions, lookups) {
   ]);
   const content = `\uFEFF${[header, ...rows].map((row) => row.map(csvCell).join(";")).join("\r\n")}`;
   const date = new Date().toISOString().slice(0, 10);
-  downloadBlob(content, `bremen-budget-movimenti-${date}.csv`, "text/csv;charset=utf-8");
+  downloadBlob(content, `budgeting-movimenti-${date}.csv`, "text/csv;charset=utf-8");
 }

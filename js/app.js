@@ -19,14 +19,26 @@ let pendingImport = null;
 let lastFocusedElement = null;
 let confirmResolver = null;
 let waitingServiceWorker = null;
+const THEME_KEY = "budgeting-theme";
+const LEGACY_THEME_KEY = "bremen-budget-theme";
+const LAST_EXPENSE_ACCOUNT_KEY = "budgeting-last-expense-account";
 
 function applyTheme(theme) {
   const systemDark = matchMedia("(prefers-color-scheme: dark)").matches;
   const resolved = theme === "system" ? (systemDark ? "dark" : "light") : theme;
   document.documentElement.dataset.theme = resolved;
-  localStorage.setItem("bremen-budget-theme", theme);
+  localStorage.setItem(THEME_KEY, theme);
   $("meta[name='theme-color']").content = resolved === "dark" ? "#101512" : "#f3f5f4";
   $("#theme-toggle").setAttribute("aria-label", resolved === "dark" ? "Passa al tema chiaro" : "Passa al tema scuro");
+}
+
+function preferredExpenseAccount() {
+  const remembered = localStorage.getItem(LAST_EXPENSE_ACCOUNT_KEY);
+  if (state.accounts.some((account) => account.id === remembered)) return remembered;
+  const latestExpense = [...state.transactions]
+    .filter((transaction) => transaction.type === "expense" && state.accounts.some((account) => account.id === transaction.account))
+    .sort((a, b) => String(b.updatedAt || b.createdAt || b.date).localeCompare(String(a.updatedAt || a.createdAt || a.date)))[0];
+  return latestExpense?.account || state.accounts.find((account) => account.type === "bank" && account.includeInAvailableBalance)?.id || state.accounts[0]?.id || "";
 }
 
 function showModal(id, initialFocus) {
@@ -87,7 +99,7 @@ async function reloadState(message) {
 
 function populateOptions() {
   const accounts = state.accounts.map((item) => ({ value: item.id, label: item.name }));
-  const defaultAccount = state.accounts.find((item) => item.type === "bank" && item.includeInAvailableBalance)?.id || accounts[0]?.value || "";
+  const defaultAccount = preferredExpenseAccount();
   fillSelect($("#transaction-account"), accounts, $("#transaction-account").value || defaultAccount);
   fillSelect($("#transaction-transfer-account"), accounts, $("#transaction-transfer-account").value || accounts.find((item) => item.value !== defaultAccount)?.value || defaultAccount);
   fillSelect($("#filter-account"), accounts, $("#filter-account").value, "Tutti");
@@ -172,7 +184,7 @@ function resetTransactionForm() {
   $("#transaction-id").value = "";
   $("#transaction-date").value = todayISO();
   $("input[name='transaction-type'][value='expense']").checked = true;
-  const defaultAccount = state.accounts.find((item) => item.type === "bank" && item.includeInAvailableBalance)?.id || state.accounts[0]?.id || "";
+  const defaultAccount = preferredExpenseAccount();
   $("#transaction-account").value = defaultAccount;
   $("#transaction-transfer-account").value = state.accounts.find((item) => item.id !== defaultAccount)?.id || defaultAccount;
   $("#transaction-payment-method").value = state.settings.paymentMethods?.[0] || "";
@@ -246,6 +258,7 @@ async function saveTransaction(event) {
   form.querySelector("button[type='submit']").disabled = true;
   try {
     await put("transactions", transaction);
+    if (type === "expense") localStorage.setItem(LAST_EXPENSE_ACCOUNT_KEY, account);
     if (recurring) {
       await put("recurringTransactions", { id: recurringId, type, amount, category, description, account, transferAccount: type === "transfer" ? transferAccount : undefined, paymentMethod: transaction.paymentMethod, notes: transaction.notes, frequency, nextDate: calculateRecurringNextDate(date, frequency), active: true, isDemo: transaction.isDemo || false });
     } else if (existing?.recurringId) await remove("recurringTransactions", existing.recurringId);
@@ -460,7 +473,17 @@ function resetFilters() {
   $("#filter-search").value = ""; $("#filter-month").value = ""; $("#filter-from").value = ""; $("#filter-to").value = ""; $("#filter-type").value = ""; $("#filter-category").value = ""; $("#filter-account").value = ""; $("#filter-sort").value = "date-desc"; renderTransactionsPage();
 }
 
+function preventViewportZoom() {
+  ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+    document.addEventListener(eventName, (event) => event.preventDefault(), { passive: false });
+  });
+  document.addEventListener("touchmove", (event) => {
+    if (event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+}
+
 function bindEvents() {
+  preventViewportZoom();
   document.addEventListener("keydown", focusTrap);
   $$('[data-nav]').forEach((button) => button.addEventListener("click", () => navigate(button.dataset.nav)));
   $$('[data-open-transaction]').forEach((button) => button.addEventListener("click", () => openTransactionForm()));
@@ -483,7 +506,7 @@ function bindEvents() {
   $("#export-csv").addEventListener("click", () => { exportTransactionsCSV([...state.transactions].sort((a, b) => b.date.localeCompare(a.date)), { type: (id) => TYPE_META[id]?.label || id, category: (id) => state.categories.find((item) => item.id === id)?.name || "", account: (id) => state.accounts.find((item) => item.id === id)?.name || "" }); toast("File CSV creato."); });
   $("#import-json-file").addEventListener("change", handleImportFile); $("#confirm-import").addEventListener("click", confirmImport);
   $("#load-demo").addEventListener("click", () => loadDemoTransactions()); $("#delete-demo").addEventListener("click", deleteDemoTransactions); $("#delete-all-data").addEventListener("click", deleteEverything);
-  $("#start-empty").addEventListener("click", async () => { state.settings.onboardingComplete = true; await saveSettings(state.settings); $("#onboarding-modal").hidden = true; document.body.classList.remove("modal-open"); toast("Bremen Budget è pronto."); });
+  $("#start-empty").addEventListener("click", async () => { state.settings.onboardingComplete = true; await saveSettings(state.settings); $("#onboarding-modal").hidden = true; document.body.classList.remove("modal-open"); toast("Budgeting è pronto."); });
   $("#start-demo").addEventListener("click", () => loadDemoTransactions({ onboarding: true }));
   $("#theme-toggle").addEventListener("click", async () => { const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; state.settings.theme = next; await saveSettings(state.settings); applyTheme(next); renderCurrentView(); });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (state?.settings.theme === "system") { applyTheme("system"); renderCurrentView(); } });
@@ -507,7 +530,7 @@ async function registerServiceWorker() {
 
 async function init() {
   try {
-    applyTheme(localStorage.getItem("bremen-budget-theme") || "system");
+    applyTheme(localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY) || "system");
     await initializeDefaults(); state = await loadAllData(); applyTheme(state.settings.theme || "system");
     bindEvents(); populateOptions();
     const hashView = location.hash.slice(1); navigate(["dashboard", "transactions", "budget", "networth", "settings"].includes(hashView) ? hashView : "dashboard");
@@ -516,7 +539,7 @@ async function init() {
     await registerServiceWorker();
   } catch (error) {
     $("#app").setAttribute("aria-busy", "false");
-    toast(error.message || "Non è stato possibile avviare Bremen Budget.", "error");
+    toast(error.message || "Non è stato possibile avviare Budgeting.", "error");
   }
 }
 

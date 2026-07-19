@@ -41,7 +41,7 @@ export function openDatabase() {
       resolve(db);
     };
     request.onerror = () => reject(request.error || new Error("Impossibile aprire l'archivio locale."));
-    request.onblocked = () => reject(new Error("Chiudi le altre schede di Bremen Budget e riprova."));
+    request.onblocked = () => reject(new Error("Chiudi le altre schede di Budgeting e riprova."));
   });
   return databasePromise;
 }
@@ -108,6 +108,46 @@ export async function initializeDefaults() {
   if (!accounts.length) await putMany("accounts", DEFAULT_ACCOUNTS);
   if (!categories.length) await putMany("categories", DEFAULT_CATEGORIES);
   if (!settings.length) await saveSettings(DEFAULT_SETTINGS);
+  await migrateLegacyInternshipCategories();
+}
+
+export async function migrateLegacyInternshipCategories() {
+  const categoryMap = {
+    "internship-1": "expense-6",
+    "internship-2": "expense-16",
+    "internship-3": "expense-6",
+    "internship-4": "expense-6",
+    "internship-5": "expense-5",
+    "internship-6": "expense-16",
+    "internship-7": "expense-16",
+    "internship-8": "expense-16",
+  };
+  const categories = await getAll("categories");
+  const legacyCategories = categories.filter((category) => Object.hasOwn(categoryMap, category.id));
+  const oldSalary = categories.find((category) => category.id === "income-1" && category.name === "Stipendio internship");
+  const oldStudentJob = categories.find((category) => category.id === "income-2" && category.name === "Werkstudent");
+  if (oldSalary) await put("categories", { ...oldSalary, name: "Stipendio" });
+  if (oldStudentJob) await put("categories", { ...oldStudentJob, name: "Lavoro occasionale" });
+  if (!legacyCategories.length) return;
+
+  const requiredTargets = new Set(legacyCategories.map((category) => categoryMap[category.id]));
+  const missingTargets = DEFAULT_CATEGORIES.filter((category) => requiredTargets.has(category.id) && !categories.some((current) => current.id === category.id));
+  await putMany("categories", missingTargets);
+
+  const [transactions, recurring, budgets] = await Promise.all([getAll("transactions"), getAll("recurringTransactions"), getAll("budgets")]);
+  const changedTransactions = transactions.filter((item) => Object.hasOwn(categoryMap, item.category)).map((item) => ({ ...item, category: categoryMap[item.category], updatedAt: new Date().toISOString() }));
+  const changedRecurring = recurring.filter((item) => Object.hasOwn(categoryMap, item.category)).map((item) => ({ ...item, category: categoryMap[item.category] }));
+  const changedBudgets = budgets.filter((budget) => Object.keys(budget.categoryBudgets || {}).some((id) => Object.hasOwn(categoryMap, id))).map((budget) => {
+    const categoryBudgets = { ...(budget.categoryBudgets || {}) };
+    Object.entries(categoryMap).forEach(([legacyId, targetId]) => {
+      if (!Object.hasOwn(categoryBudgets, legacyId)) return;
+      categoryBudgets[targetId] = Number(categoryBudgets[targetId] || 0) + Number(categoryBudgets[legacyId] || 0);
+      delete categoryBudgets[legacyId];
+    });
+    return { ...budget, categoryBudgets };
+  });
+  await Promise.all([putMany("transactions", changedTransactions), putMany("recurringTransactions", changedRecurring), putMany("budgets", changedBudgets)]);
+  await Promise.all(legacyCategories.map((category) => remove("categories", category.id)));
 }
 
 export async function loadAllData() {
