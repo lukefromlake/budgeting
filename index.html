@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f6f5">
+  <meta name="description" content="Bremen Budget: finanze personali, private e disponibili offline.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Bremen Budget">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./style.css">
+  <title>Bremen Budget</title>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Vai al contenuto</a>
+  <div id="app" class="app-shell" aria-busy="true">
+    <header class="topbar">
+      <div class="brand" aria-label="Bremen Budget">
+        <span class="brand-mark" aria-hidden="true">B</span>
+        <div><strong>Bremen Budget</strong><small>Il tuo spazio finanziario</small></div>
+      </div>
+      <div class="topbar-actions">
+        <button id="privacy-indicator" class="privacy-pill" type="button" data-nav="settings" aria-label="Apri le impostazioni privacy"><span aria-hidden="true">●</span> Solo sul dispositivo</button>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="Cambia tema"><span aria-hidden="true">◐</span></button>
+      </div>
+    </header>
+
+    <div id="update-banner" class="update-banner" hidden>
+      <span>È disponibile una nuova versione.</span>
+      <button id="update-app" class="text-button" type="button">Aggiorna ora</button>
+    </div>
+
+    <main id="main-content" tabindex="-1">
+      <section id="view-dashboard" class="view is-active" data-view="dashboard" aria-labelledby="dashboard-title">
+        <div class="page-heading">
+          <div><p class="eyebrow">Panoramica</p><h1 id="dashboard-title">Dashboard</h1></div>
+          <label class="month-control"><span class="sr-only">Mese dashboard</span><input id="dashboard-month" type="month"></label>
+        </div>
+
+        <article class="balance-hero">
+          <div><p>Saldo disponibile</p><strong id="available-balance">0,00 €</strong><span id="balance-caption">Su 0 conti inclusi</span></div>
+          <button class="hero-add" type="button" data-open-transaction><span aria-hidden="true">＋</span> Movimento</button>
+        </article>
+
+        <div class="stats-grid" aria-label="Riepilogo del mese">
+          <article class="stat-card income"><span class="stat-icon" aria-hidden="true">↗</span><div><p>Entrate</p><strong id="month-income">0,00 €</strong></div></article>
+          <article class="stat-card expense"><span class="stat-icon" aria-hidden="true">↘</span><div><p>Spese</p><strong id="month-expense">0,00 €</strong></div></article>
+          <article class="stat-card investment"><span class="stat-icon" aria-hidden="true">◆</span><div><p>Investimenti</p><strong id="month-investment">0,00 €</strong></div></article>
+          <article class="stat-card saving"><span class="stat-icon" aria-hidden="true">◎</span><div><p>Risparmio netto</p><strong id="month-saving">0,00 €</strong></div></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="card budget-summary-card">
+            <div class="card-heading"><div><p class="eyebrow">Budget mensile</p><h2 id="budget-summary-title">Andamento</h2></div><button type="button" class="text-button" data-nav="budget">Gestisci</button></div>
+            <div class="budget-big"><strong id="budget-spent">0,00 €</strong><span id="budget-total-label">di 0,00 €</span></div>
+            <div class="progress" role="progressbar" aria-label="Budget utilizzato" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="budget-progress"></span></div>
+            <div class="split-caption"><span id="budget-status">Nessun budget impostato</span><strong id="budget-remaining">—</strong></div>
+          </article>
+
+          <article class="card chart-card">
+            <div class="card-heading"><div><p class="eyebrow">Ultimi 6 mesi</p><h2>Entrate e uscite</h2></div><div class="chart-legend"><span class="legend-income">Entrate</span><span class="legend-expense">Uscite</span></div></div>
+            <canvas id="monthly-chart" class="chart" role="img" aria-label="Grafico mensile"></canvas>
+          </article>
+
+          <article class="card distribution-card">
+            <div class="card-heading"><div><p class="eyebrow">Dove spendi</p><h2>Categorie</h2></div></div>
+            <div id="category-distribution" class="distribution-list"></div>
+          </article>
+
+          <article class="card recent-card">
+            <div class="card-heading"><div><p class="eyebrow">Attività</p><h2>Ultimi movimenti</h2></div><button type="button" class="text-button" data-nav="transactions">Vedi tutti</button></div>
+            <div id="recent-transactions" class="transaction-list compact-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="view-transactions" class="view" data-view="transactions" aria-labelledby="transactions-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Archivio</p><h1 id="transactions-title">Movimenti</h1></div><button class="primary-button desktop-add" type="button" data-open-transaction>＋ Nuovo</button></div>
+        <div class="card filter-card">
+          <div class="search-row">
+            <label class="search-field"><span class="sr-only">Cerca movimenti</span><span aria-hidden="true">⌕</span><input id="filter-search" type="search" placeholder="Cerca descrizione, categoria, note…" autocomplete="off"></label>
+            <button id="toggle-filters" class="secondary-button" type="button" aria-expanded="false" aria-controls="advanced-filters">Filtri <span id="filter-count" class="badge" hidden>0</span></button>
+          </div>
+          <div id="advanced-filters" class="filter-grid" hidden>
+            <label>Mese<input id="filter-month" type="month"></label>
+            <label>Dal<input id="filter-from" type="date"></label>
+            <label>Al<input id="filter-to" type="date"></label>
+            <label>Tipo<select id="filter-type"><option value="">Tutti</option><option value="income">Entrate</option><option value="expense">Spese</option><option value="investment">Investimenti</option><option value="transfer">Trasferimenti</option></select></label>
+            <label>Categoria<select id="filter-category"><option value="">Tutte</option></select></label>
+            <label>Conto<select id="filter-account"><option value="">Tutti</option></select></label>
+            <label>Ordina<select id="filter-sort"><option value="date-desc">Data: recenti</option><option value="date-asc">Data: meno recenti</option><option value="amount-desc">Importo: maggiore</option><option value="amount-asc">Importo: minore</option></select></label>
+            <button id="reset-filters" class="text-button filter-reset" type="button">Azzera filtri</button>
+          </div>
+        </div>
+
+        <div id="filtered-totals" class="filter-totals" aria-live="polite"></div>
+
+        <article id="recurring-card" class="card recurring-card" hidden>
+          <div class="card-heading"><div><p class="eyebrow">Da confermare</p><h2>Movimenti ricorrenti previsti</h2></div></div>
+          <div id="recurring-proposals" class="proposal-list"></div>
+        </article>
+
+        <div id="transactions-list" class="transaction-list full-list"></div>
+        <p id="transactions-result-count" class="result-count"></p>
+      </section>
+
+      <section id="view-budget" class="view" data-view="budget" aria-labelledby="budget-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Pianificazione</p><h1 id="budget-title">Budget</h1></div><label class="month-control"><span class="sr-only">Mese budget</span><input id="budget-month" type="month"></label></div>
+        <div class="budget-layout">
+          <article class="card budget-editor">
+            <div class="card-heading"><div><p class="eyebrow">Limite generale</p><h2 id="budget-month-title">Budget del mese</h2></div></div>
+            <form id="total-budget-form" class="inline-form">
+              <label>Budget totale (€)<input id="total-budget-input" inputmode="decimal" placeholder="1.200,00" required></label>
+              <button class="primary-button" type="submit">Salva</button>
+            </form>
+            <div class="button-row wrap">
+              <button id="copy-previous-budget" class="secondary-button" type="button">Copia mese precedente</button>
+              <button id="delete-budget" class="danger-text-button" type="button">Elimina budget</button>
+            </div>
+          </article>
+          <article class="card budget-overview">
+            <div class="card-heading"><div><p class="eyebrow">Stato</p><h2>Riepilogo</h2></div></div>
+            <div id="budget-overview-content"></div>
+          </article>
+        </div>
+        <div class="section-heading"><div><h2>Budget per categoria</h2><p>Le spese senza budget restano visibili.</p></div></div>
+        <div id="category-budgets" class="category-budget-list"></div>
+      </section>
+
+      <section id="view-networth" class="view" data-view="networth" aria-labelledby="networth-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Situazione complessiva</p><h1 id="networth-title">Patrimonio</h1></div><button id="open-snapshot" class="primary-button" type="button">＋ Snapshot</button></div>
+        <div class="stats-grid networth-stats">
+          <article class="stat-card primary"><span class="stat-icon" aria-hidden="true">◎</span><div><p>Patrimonio netto</p><strong id="net-worth-total">0,00 €</strong><small id="net-worth-change">Nessun confronto</small></div></article>
+          <article class="stat-card"><span class="stat-icon" aria-hidden="true">▤</span><div><p>Liquidità</p><strong id="net-worth-cash">0,00 €</strong></div></article>
+          <article class="stat-card investment"><span class="stat-icon" aria-hidden="true">◆</span><div><p>Investimenti</p><strong id="net-worth-investments">0,00 €</strong></div></article>
+          <article class="stat-card expense"><span class="stat-icon" aria-hidden="true">−</span><div><p>Debiti</p><strong id="net-worth-debts">0,00 €</strong></div></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="card chart-card wide-card"><div class="card-heading"><div><p class="eyebrow">Storico</p><h2>Andamento del patrimonio</h2></div></div><canvas id="networth-chart" class="chart networth-chart" role="img" aria-label="Grafico del patrimonio"></canvas></article>
+          <article class="card"><div class="card-heading"><div><p class="eyebrow">Investimenti</p><h2>Versamenti</h2></div></div><div id="investment-analysis"></div></article>
+          <article class="card"><div class="card-heading"><div><p class="eyebrow">Valori salvati</p><h2>Snapshot</h2></div></div><div id="snapshot-list" class="snapshot-list"></div></article>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view" data-view="settings" aria-labelledby="settings-title" hidden>
+        <div class="page-heading"><div><p class="eyebrow">Preferenze e dati</p><h1 id="settings-title">Impostazioni</h1></div></div>
+        <div class="settings-grid">
+          <article class="card settings-card">
+            <div class="card-heading"><div><p class="eyebrow">Aspetto</p><h2>Preferenze</h2></div></div>
+            <form id="preferences-form" class="form-grid two-columns">
+              <label>Valuta<select id="setting-currency"><option value="EUR">Euro (EUR)</option></select></label>
+              <label>Lingua<select id="setting-language"><option value="it-IT">Italiano</option></select></label>
+              <label>Tema<select id="setting-theme"><option value="system">Sistema</option><option value="light">Chiaro</option><option value="dark">Scuro</option></select></label>
+              <label>Primo giorno del mese<input id="setting-first-day" type="number" min="1" max="28" inputmode="numeric"></label>
+              <label class="full-span">Saldo iniziale generale (€)<input id="setting-opening-balance" inputmode="decimal"></label>
+              <button class="primary-button form-submit" type="submit">Salva preferenze</button>
+            </form>
+          </article>
+
+          <article class="card settings-card privacy-card">
+            <div class="privacy-icon" aria-hidden="true">⌂</div>
+            <div><p class="eyebrow">Privacy</p><h2>I dati restano qui</h2><p>I dati vengono salvati localmente su questo dispositivo e non vengono inviati a server. Esegui regolarmente un backup per evitare perdite.</p></div>
+          </article>
+
+          <article class="card settings-card wide-card">
+            <div class="card-heading"><div><p class="eyebrow">Organizzazione</p><h2>Categorie</h2></div><button id="add-category" class="secondary-button" type="button">＋ Categoria</button></div>
+            <div id="settings-categories" class="management-list"></div>
+          </article>
+
+          <article class="card settings-card">
+            <div class="card-heading"><div><p class="eyebrow">Disponibilità</p><h2>Conti</h2></div><button id="add-account" class="secondary-button" type="button">＋ Conto</button></div>
+            <div id="settings-accounts" class="management-list"></div>
+          </article>
+
+          <article class="card settings-card">
+            <div class="card-heading"><div><p class="eyebrow">Pagamento</p><h2>Metodi</h2></div></div>
+            <form id="payment-method-form" class="inline-form"><label class="grow">Nuovo metodo<input id="new-payment-method" maxlength="40" placeholder="Es. PayPal"></label><button class="secondary-button" type="submit">Aggiungi</button></form>
+            <div id="payment-methods-list" class="tag-list"></div>
+          </article>
+
+          <article class="card settings-card wide-card">
+            <div class="card-heading"><div><p class="eyebrow">Portabilità</p><h2>Backup ed esportazione</h2></div></div>
+            <div class="action-grid">
+              <button id="export-json" class="action-button" type="button"><span aria-hidden="true">↓</span><strong>Esporta backup JSON</strong><small>Tutti i dati dell’app</small></button>
+              <label class="action-button file-action"><span aria-hidden="true">↑</span><strong>Importa backup JSON</strong><small>Unisci o sostituisci i dati</small><input id="import-json-file" type="file" accept="application/json,.json"></label>
+              <button id="export-csv" class="action-button" type="button"><span aria-hidden="true">▤</span><strong>Esporta movimenti CSV</strong><small>Compatibile con Excel</small></button>
+            </div>
+          </article>
+
+          <article class="card settings-card">
+            <div class="card-heading"><div><p class="eyebrow">Esempio</p><h2>Dati demo</h2></div></div>
+            <p class="muted">Prova l’app con movimenti chiaramente identificati.</p>
+            <div class="button-row wrap"><button id="load-demo" class="secondary-button" type="button">Carica demo</button><button id="delete-demo" class="danger-text-button" type="button">Elimina demo</button></div>
+          </article>
+
+          <article class="card settings-card danger-zone">
+            <div class="card-heading"><div><p class="eyebrow">Zona critica</p><h2>Cancella tutti i dati</h2></div></div>
+            <p>Rimuove definitivamente movimenti, budget, conti, categorie e snapshot da questo dispositivo.</p>
+            <button id="delete-all-data" class="danger-button" type="button">Cancella tutto</button>
+          </article>
+        </div>
+        <footer class="app-footer"><p>Bremen Budget <span id="app-version">v1.0.0</span> · Nessun tracking, nessun account.</p></footer>
+      </section>
+    </main>
+
+    <button class="floating-add" type="button" data-open-transaction aria-label="Aggiungi un nuovo movimento">＋</button>
+    <nav class="bottom-nav" aria-label="Navigazione principale">
+      <button class="nav-item is-active" type="button" data-nav="dashboard" aria-current="page"><span aria-hidden="true">⌂</span><span>Dashboard</span></button>
+      <button class="nav-item" type="button" data-nav="transactions"><span aria-hidden="true">⇅</span><span>Movimenti</span></button>
+      <button class="nav-item" type="button" data-nav="budget"><span aria-hidden="true">◔</span><span>Budget</span></button>
+      <button class="nav-item" type="button" data-nav="networth"><span aria-hidden="true">⌁</span><span>Patrimonio</span></button>
+      <button class="nav-item" type="button" data-nav="settings"><span aria-hidden="true">⚙</span><span>Impostazioni</span></button>
+    </nav>
+  </div>
+
+  <div id="transaction-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel large" role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title">
+      <header class="modal-header"><div><p class="eyebrow">Movimento</p><h2 id="transaction-modal-title">Nuovo movimento</h2></div><button class="icon-button" type="button" data-close-modal aria-label="Chiudi">×</button></header>
+      <form id="transaction-form" novalidate>
+        <input id="transaction-id" type="hidden">
+        <fieldset class="type-selector"><legend>Tipo</legend>
+          <label><input type="radio" name="transaction-type" value="expense" checked><span>↘ Spesa</span></label>
+          <label><input type="radio" name="transaction-type" value="income"><span>↗ Entrata</span></label>
+          <label><input type="radio" name="transaction-type" value="investment"><span>◆ Investimento</span></label>
+          <label><input type="radio" name="transaction-type" value="transfer"><span>⇄ Trasferimento</span></label>
+        </fieldset>
+        <div class="amount-field"><label for="transaction-amount">Importo</label><div><span>€</span><input id="transaction-amount" inputmode="decimal" autocomplete="off" placeholder="0,00" required></div><p id="amount-error" class="field-error" hidden></p></div>
+        <div class="form-grid two-columns">
+          <label>Data<input id="transaction-date" type="date" required></label>
+          <label>Categoria<select id="transaction-category" required></select></label>
+          <label class="full-span">Descrizione<input id="transaction-description" maxlength="100" placeholder="Es. Spesa settimanale" required></label>
+          <label>Conto <span id="account-source-label" class="label-hint"></span><select id="transaction-account" required></select></label>
+          <label id="transfer-account-field" hidden>Conto destinazione<select id="transaction-transfer-account"></select></label>
+          <label id="payment-method-field">Metodo di pagamento<select id="transaction-payment-method"></select></label>
+          <label class="checkbox-field"><input id="transaction-recurring" type="checkbox"><span>Movimento ricorrente</span></label>
+          <label id="frequency-field" hidden>Frequenza<select id="transaction-frequency"><option value="monthly">Mensile</option><option value="weekly">Settimanale</option><option value="yearly">Annuale</option></select></label>
+          <label class="full-span">Note (opzionali)<textarea id="transaction-notes" rows="3" maxlength="500" placeholder="Aggiungi un dettaglio utile"></textarea></label>
+        </div>
+        <p id="transaction-form-error" class="form-error" role="alert" hidden></p>
+        <footer class="modal-actions"><button class="secondary-button" type="button" data-close-modal>Annulla</button><button class="primary-button" type="submit">Salva movimento</button></footer>
+      </form>
+    </section>
+  </div>
+
+  <div id="snapshot-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="snapshot-modal-title">
+      <header class="modal-header"><div><p class="eyebrow">Patrimonio</p><h2 id="snapshot-modal-title">Nuovo snapshot</h2></div><button class="icon-button" type="button" data-close-modal aria-label="Chiudi">×</button></header>
+      <form id="snapshot-form" novalidate>
+        <input id="snapshot-id" type="hidden">
+        <div class="form-grid two-columns">
+          <label class="full-span">Data<input id="snapshot-date" type="date" required></label>
+          <div id="snapshot-account-fields" class="full-span form-grid two-columns"></div>
+          <label>Valore investimenti (€)<input id="snapshot-investments" inputmode="decimal" value="0,00" required></label>
+          <label>Debiti (€)<input id="snapshot-debts" inputmode="decimal" value="0,00" required></label>
+          <label class="full-span">Note<textarea id="snapshot-notes" rows="3" maxlength="500"></textarea></label>
+        </div>
+        <p id="snapshot-form-error" class="form-error" role="alert" hidden></p>
+        <footer class="modal-actions"><button class="secondary-button" type="button" data-close-modal>Annulla</button><button class="primary-button" type="submit">Salva snapshot</button></footer>
+      </form>
+    </section>
+  </div>
+
+  <div id="entity-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="entity-modal-title">
+      <header class="modal-header"><h2 id="entity-modal-title">Nuovo elemento</h2><button class="icon-button" type="button" data-close-modal aria-label="Chiudi">×</button></header>
+      <form id="entity-form" novalidate>
+        <input id="entity-kind" type="hidden"><input id="entity-id" type="hidden">
+        <div id="category-entity-fields" class="form-grid two-columns">
+          <label class="full-span">Nome<input id="entity-name" maxlength="60" required></label>
+          <label>Tipo<select id="entity-category-type"><option value="expense">Spesa</option><option value="income">Entrata</option><option value="investment">Investimento</option><option value="transfer">Trasferimento</option></select></label>
+          <label>Icona<input id="entity-icon" maxlength="4" placeholder="●"></label>
+          <label class="full-span">Colore<input id="entity-color" type="color" value="#2f7d68"></label>
+        </div>
+        <div id="account-entity-fields" class="form-grid two-columns" hidden>
+          <label class="full-span">Nome<input id="account-entity-name" maxlength="60"></label>
+          <label>Tipo<select id="entity-account-type"><option value="bank">Banca</option><option value="cash">Contanti</option><option value="investment">Investimento</option><option value="credit">Credito/debito</option></select></label>
+          <label>Saldo iniziale (€)<input id="entity-initial-balance" inputmode="decimal" value="0,00"></label>
+          <label class="checkbox-field full-span"><input id="entity-available" type="checkbox" checked><span>Includi nel saldo disponibile</span></label>
+        </div>
+        <p id="entity-form-error" class="form-error" role="alert" hidden></p>
+        <footer class="modal-actions"><button class="secondary-button" type="button" data-close-modal>Annulla</button><button class="primary-button" type="submit">Salva</button></footer>
+      </form>
+    </section>
+  </div>
+
+  <div id="import-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="import-modal-title">
+      <header class="modal-header"><div><p class="eyebrow">Backup verificato</p><h2 id="import-modal-title">Importa dati</h2></div><button class="icon-button" type="button" data-close-modal aria-label="Chiudi">×</button></header>
+      <p id="import-summary"></p>
+      <fieldset class="choice-list"><legend>Come vuoi procedere?</legend><label><input type="radio" name="import-mode" value="merge" checked><span><strong>Unisci</strong><small>Mantiene i dati attuali; gli elementi con lo stesso ID vengono aggiornati.</small></span></label><label><input type="radio" name="import-mode" value="replace"><span><strong>Sostituisci</strong><small>Cancella prima tutti i dati presenti su questo dispositivo.</small></span></label></fieldset>
+      <footer class="modal-actions"><button class="secondary-button" type="button" data-close-modal>Annulla</button><button id="confirm-import" class="primary-button" type="button">Importa backup</button></footer>
+    </section>
+  </div>
+
+  <div id="confirm-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <section class="modal-panel small" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+      <header class="modal-header"><h2 id="confirm-title">Conferma</h2></header><p id="confirm-message"></p>
+      <footer class="modal-actions"><button id="confirm-cancel" class="secondary-button" type="button">Annulla</button><button id="confirm-accept" class="danger-button" type="button">Conferma</button></footer>
+    </section>
+  </div>
+
+  <div id="onboarding-modal" class="modal" hidden>
+    <div class="modal-backdrop"></div>
+    <section class="modal-panel onboarding" role="dialog" aria-modal="true" aria-labelledby="onboarding-title">
+      <div class="onboarding-mark" aria-hidden="true">B</div><p class="eyebrow">Benvenuto</p><h2 id="onboarding-title">Le tue finanze, senza rumore.</h2><p>Bremen Budget salva tutto sul tuo dispositivo. Puoi partire da zero oppure esplorare l’app con cinque movimenti dimostrativi.</p>
+      <div class="onboarding-features"><span>✓ Offline</span><span>✓ Nessun account</span><span>✓ Backup portabile</span></div>
+      <div class="modal-actions stacked-mobile"><button id="start-empty" class="secondary-button" type="button">Inizia senza dati</button><button id="start-demo" class="primary-button" type="button">Prova con dati demo</button></div>
+    </section>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <noscript><div class="noscript">Bremen Budget richiede JavaScript per funzionare.</div></noscript>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
