@@ -19,6 +19,7 @@ let pendingImport = null;
 let lastFocusedElement = null;
 let confirmResolver = null;
 let waitingServiceWorker = null;
+let lockedScrollY = 0;
 const THEME_KEY = "budgeting-theme";
 const LEGACY_THEME_KEY = "bremen-budget-theme";
 const LAST_EXPENSE_ACCOUNT_KEY = "budgeting-last-expense-account";
@@ -30,6 +31,23 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, theme);
   $("meta[name='theme-color']").content = resolved === "dark" ? "#101512" : "#f3f5f4";
   $("#theme-toggle").setAttribute("aria-label", resolved === "dark" ? "Passa al tema chiaro" : "Passa al tema scuro");
+}
+
+function lockViewport() {
+  if (document.body.classList.contains("modal-open")) return;
+  lockedScrollY = window.scrollY;
+  document.body.style.top = `-${lockedScrollY}px`;
+  document.body.classList.add("modal-open");
+}
+
+function unlockViewport() {
+  if (!document.body.classList.contains("modal-open")) return;
+  document.body.classList.remove("modal-open");
+  document.body.style.top = "";
+  const previousBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = "auto";
+  window.scrollTo(0, lockedScrollY);
+  document.documentElement.style.scrollBehavior = previousBehavior;
 }
 
 function preferredExpenseAccount() {
@@ -45,14 +63,14 @@ function showModal(id, initialFocus) {
   const modal = $(`#${id}`);
   lastFocusedElement = document.activeElement;
   modal.hidden = false;
-  document.body.classList.add("modal-open");
+  lockViewport();
   requestAnimationFrame(() => (initialFocus ? $(initialFocus, modal) : $("button, input, select, textarea", modal))?.focus());
 }
 
 function closeModal(modal) {
   if (!modal || modal.id === "onboarding-modal") return;
   modal.hidden = true;
-  if (!$(".modal:not([hidden])")) document.body.classList.remove("modal-open");
+  if (!$(".modal:not([hidden])")) unlockViewport();
   lastFocusedElement?.focus?.();
 }
 
@@ -68,7 +86,7 @@ function askConfirmation({ title = "Conferma", message, acceptLabel = "Conferma"
 function resolveConfirmation(value) {
   const modal = $("#confirm-modal");
   modal.hidden = true;
-  document.body.classList.remove("modal-open");
+  unlockViewport();
   confirmResolver?.(value);
   confirmResolver = null;
   lastFocusedElement?.focus?.();
@@ -431,7 +449,7 @@ async function loadDemoTransactions({ onboarding = false } = {}) {
   const recurring = rows.filter((item) => item.recurring).map((item) => ({ id: uid(), type: item.type, amount: item.amount, category: item.category, description: item.description, account: item.account, paymentMethod: item.paymentMethod, notes: item.notes, frequency: "monthly", nextDate: calculateRecurringNextDate(item.date, "monthly"), active: true, isDemo: true }));
   await putMany("recurringTransactions", recurring);
   state.settings.onboardingComplete = true; await saveSettings(state.settings);
-  if (onboarding) { $("#onboarding-modal").hidden = true; document.body.classList.remove("modal-open"); }
+  if (onboarding) { $("#onboarding-modal").hidden = true; unlockViewport(); }
   await reloadState("Dati demo caricati.");
 }
 
@@ -474,11 +492,19 @@ function resetFilters() {
 }
 
 function preventViewportZoom() {
+  let lastTouchEnd = 0;
+  let lastTouchTarget = null;
   ["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
     document.addEventListener(eventName, (event) => event.preventDefault(), { passive: false });
   });
   document.addEventListener("touchmove", (event) => {
     if (event.touches.length > 1) event.preventDefault();
+  }, { passive: false });
+  document.addEventListener("touchend", (event) => {
+    const now = Date.now();
+    if (lastTouchTarget === event.target && now - lastTouchEnd < 300) event.preventDefault();
+    lastTouchEnd = now;
+    lastTouchTarget = event.target;
   }, { passive: false });
 }
 
@@ -506,7 +532,7 @@ function bindEvents() {
   $("#export-csv").addEventListener("click", () => { exportTransactionsCSV([...state.transactions].sort((a, b) => b.date.localeCompare(a.date)), { type: (id) => TYPE_META[id]?.label || id, category: (id) => state.categories.find((item) => item.id === id)?.name || "", account: (id) => state.accounts.find((item) => item.id === id)?.name || "" }); toast("File CSV creato."); });
   $("#import-json-file").addEventListener("change", handleImportFile); $("#confirm-import").addEventListener("click", confirmImport);
   $("#load-demo").addEventListener("click", () => loadDemoTransactions()); $("#delete-demo").addEventListener("click", deleteDemoTransactions); $("#delete-all-data").addEventListener("click", deleteEverything);
-  $("#start-empty").addEventListener("click", async () => { state.settings.onboardingComplete = true; await saveSettings(state.settings); $("#onboarding-modal").hidden = true; document.body.classList.remove("modal-open"); toast("Budgeting è pronto."); });
+  $("#start-empty").addEventListener("click", async () => { state.settings.onboardingComplete = true; await saveSettings(state.settings); $("#onboarding-modal").hidden = true; unlockViewport(); toast("Budgeting è pronto."); });
   $("#start-demo").addEventListener("click", () => loadDemoTransactions({ onboarding: true }));
   $("#theme-toggle").addEventListener("click", async () => { const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; state.settings.theme = next; await saveSettings(state.settings); applyTheme(next); renderCurrentView(); });
   matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (state?.settings.theme === "system") { applyTheme("system"); renderCurrentView(); } });
